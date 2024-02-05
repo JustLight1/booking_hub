@@ -6,35 +6,15 @@ import uvicorn
 
 from bookings.router import router as router_bookings
 from users.router import router as router_users
+from hotels.router import router as router_hotels
+from hotels.rooms.router import router as router_rooms
 
 app = FastAPI()
 
 app.include_router(router_users)
 app.include_router(router_bookings)
-
-
-class Hotel:
-    def __init__(
-        self,
-        location: str,
-        date_from: date,
-        date_to: date,
-        has_spa: Optional[bool] = None,
-        stars: Optional[int] = Query(None, ge=1, le=5),
-    ):
-        self.location = location
-        self.date_from = date_from
-        self.date_to = date_to
-        self.has_spa = has_spa
-        self.stars = stars
-
-
-@app.get('/hotels/')
-def get_hotels(
-    search_args: Hotel = Depends()
-):
-
-    return search_args
+app.include_router(router_hotels)
+app.include_router(router_rooms)
 
 
 if __name__ == '__main__':
