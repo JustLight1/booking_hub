@@ -1,17 +1,17 @@
-from sqlalchemy import Column, Date, ForeignKey, Integer
-from sqlalchemy.orm import column_property
-from database import Base
+from datetime import date
+
+from sqlalchemy import Date, ForeignKey, Integer, Computed
+from sqlalchemy.orm import Mapped, mapped_column
+from app.database import Base
 
 
 class Bookings(Base):
-    __tablename__ = 'bookings'
+    room_id: Mapped[int] = mapped_column(Integer, ForeignKey('rooms.id'))
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'))
+    date_from: Mapped[date] = mapped_column(Date, nullable=False)
+    date_to: Mapped[date] = mapped_column(Date, nullable=False)
+    price: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    id = Column(Integer, primary_key=True)
-    room_id = Column(ForeignKey('rooms.id'))
-    user_id = Column(ForeignKey('users.id'))
-    date_from = Column(Date, nullable=False)
-    date_to = Column(Date, nullable=False)
-    price = Column(Integer, nullable=False)
-
-    total_cost = column_property((date_to - date_from) * price)
-    total_days = column_property((date_to - date_from))
+    total_cost = mapped_column(
+        Integer, Computed('date_to - date_from) * price'))
+    total_days = mapped_column(Integer, Computed('date_to - date_from'))
