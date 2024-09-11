@@ -1,21 +1,25 @@
-from sqlalchemy import JSON, Column, Integer, String
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
 
-from database import Base
+from sqlalchemy import JSON, Integer, String
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+from app.database import Base
+
+
+if TYPE_CHECKING:
+    from app.hotels.rooms.models import Rooms
 
 
 class Hotels(Base):
-    __tablename__ = 'hotels'
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    location: Mapped[str] = mapped_column(String, nullable=False)
+    services: Mapped[dict] = mapped_column(JSON)
+    rooms_quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    image_id: Mapped[int] = mapped_column(Integer)
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    location = Column(String, nullable=False)
-    services = Column(JSON)
-    rooms_quantity = Column(Integer, nullable=False)
-    image_id = Column(Integer)
-
-    rooms_left = Column(Integer, nullable=True)
-    rooms = relationship("Rooms", back_populates="hotel")
+    rooms_left: Mapped[int] = mapped_column(Integer, nullable=True)
+    rooms: Mapped[list['Rooms']] = relationship(
+        'Rooms', back_populates='hotel')
 
     def __str__(self):
-        return f"Отель {self.name} {self.location[:30]}"
+        return f'Отель {self.name} {self.location[:30]}'
