@@ -1,12 +1,14 @@
 from datetime import datetime
 from fastapi import Depends, HTTPException, Request, status
 from jose import jwt, JWTError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings
-from users.dao import UsersDAO
-from exceptions import (TokenExpiredException, TokenAbsentException,
-                        IncorrectTokenFormatException,
-                        UserIsNotPresentException)
+from app.config import settings
+from app.users.dao import UsersDAO
+from app.exceptions import (TokenExpiredException, TokenAbsentException,
+                            IncorrectTokenFormatException,
+                            UserIsNotPresentException)
+from app.database import get_async_session
 
 
 def get_token(request: Request):
@@ -16,7 +18,7 @@ def get_token(request: Request):
     return token
 
 
-async def get_current_user(token: str = Depends(get_token)):
+async def get_current_user(token: str = Depends(get_token), session: AsyncSession = Depends(get_async_session)):
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, settings.ALGORITHM
@@ -29,7 +31,7 @@ async def get_current_user(token: str = Depends(get_token)):
     user_id: str = payload.get('sub')
     if not user_id:
         raise UserIsNotPresentException
-    user = await UsersDAO.find_by_id(int(user_id))
+    user = await UsersDAO.find_by_id(int(user_id), session=session)
     if not user:
         raise UserIsNotPresentException
     return user
