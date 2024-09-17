@@ -1,12 +1,16 @@
 from fastapi import APIRouter, Depends, Response
 
-from users.models import Users
-from users.dependencies import get_current_user
-from .auth import get_password_hash, authenticate_user, create_access_token
-from .dao import UsersDAO
-from .shemas import SUserAuth
-from exceptions import (UserAlreadyExistsException,
-                        IncorrectEmailorPasswordException)
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.exceptions import (UserAlreadyExistsException,
+                            IncorrectEmailorPasswordException)
+from app.database import get_async_session
+from app.users.models import Users
+from app.users.dependencies import get_current_user
+from app.users.auth import (get_password_hash, authenticate_user,
+                            create_access_token)
+from app.users.dao import UsersDAO
+from app.users.schemas import SUserAuth
 
 
 router = APIRouter(
@@ -16,17 +20,35 @@ router = APIRouter(
 
 
 @router.post('/register')
-async def register_user(user_data: SUserAuth):
-    existing_user = await UsersDAO.find_one_or_none(email=user_data.email)
+async def register_user(
+    user_data: SUserAuth,
+    session: AsyncSession = Depends(get_async_session)
+):
+    existing_user = await UsersDAO.find_one_or_none(
+        session,
+        email=user_data.email
+    )
     if existing_user:
         raise UserAlreadyExistsException
     hashed_password = get_password_hash(user_data.password)
-    await UsersDAO.add(email=user_data.email, hashed_password=hashed_password)
+    await UsersDAO.add(
+        session,
+        email=user_data.email,
+        hashed_password=hashed_password
+    )
 
 
 @router.post('/login')
-async def login_user(response: Response, user_data: SUserAuth):
-    user = await authenticate_user(user_data.email, user_data.password)
+async def login_user(
+    response: Response,
+    user_data: SUserAuth,
+    session: AsyncSession = Depends(get_async_session)
+):
+    user = await authenticate_user(
+        user_data.email,
+        user_data.password,
+        session
+    )
     if not user:
         raise IncorrectEmailorPasswordException
     access_token = create_access_token({'sub': str(user.id)})
