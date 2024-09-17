@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.users.dao import UsersDAO
+from app.exceptions import IncorrectEmailorPasswordException
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -34,6 +35,6 @@ def create_access_token(data: dict) -> str:
 async def authenticate_user(email: EmailStr, password: str,
                             session: AsyncSession):
     user = await UsersDAO.find_one_or_none(session, email=email)
-    if not user and not verify_password(password, user.password):
-        return None
+    if not (user and verify_password(password, user.hashed_password)):
+        raise IncorrectEmailorPasswordException
     return user
