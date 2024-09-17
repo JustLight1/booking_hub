@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.exceptions import (UserAlreadyExistsException,
-                            IncorrectEmailorPasswordException)
+from app.exceptions import (UserAlreadyExistsException)
 from app.database import get_async_session
 from app.users.models import Users
 from app.users.dependencies import get_current_user
@@ -49,8 +48,6 @@ async def login_user(
         user_data.password,
         session
     )
-    if not user:
-        raise IncorrectEmailorPasswordException
     access_token = create_access_token({'sub': str(user.id)})
     response.set_cookie('booking_access_token', access_token, httponly=True)
     return access_token
