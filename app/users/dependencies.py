@@ -1,14 +1,16 @@
-from datetime import datetime
-from fastapi import Depends, HTTPException, Request, status
-from jose import jwt, JWTError
+from datetime import datetime, timezone
+
+from fastapi import Request, Depends
+
 from sqlalchemy.ext.asyncio import AsyncSession
+from jose import jwt, JWTError
 
 from app.config import settings
-from app.users.dao import UsersDAO
-from app.exceptions import (TokenExpiredException, TokenAbsentException,
-                            IncorrectTokenFormatException,
-                            UserIsNotPresentException)
 from app.database import get_async_session
+from app.users.dao import UsersDAO
+from app.exceptions import (IncorrectTokenFormatException,
+                            TokenExpiredException, UserIsNotPresentException,
+                            TokenAbsentException)
 
 
 def get_token(request: Request):
@@ -18,7 +20,10 @@ def get_token(request: Request):
     return token
 
 
-async def get_current_user(token: str = Depends(get_token), session: AsyncSession = Depends(get_async_session)):
+async def get_current_user(
+        token: str = Depends(get_token),
+        session: AsyncSession = Depends(get_async_session)
+):
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, settings.ALGORITHM
@@ -26,12 +31,12 @@ async def get_current_user(token: str = Depends(get_token), session: AsyncSessio
     except JWTError:
         raise IncorrectTokenFormatException
     expire: str = payload.get('exp')
-    if not expire or (int(expire) < datetime.utcnow().timestamp()):
+    if not expire or (int(expire) < datetime.now(timezone.utc).timestamp()):
         raise TokenExpiredException
     user_id: str = payload.get('sub')
     if not user_id:
         raise UserIsNotPresentException
-    user = await UsersDAO.find_by_id(int(user_id), session=session)
+    user = await UsersDAO.find_by_id(session, int(user_id))
     if not user:
         raise UserIsNotPresentException
     return user
