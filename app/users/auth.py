@@ -1,10 +1,13 @@
-from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
-from pydantic import EmailStr
+from datetime import datetime, timedelta, timezone
 
-from config import settings
-from users.dao import UsersDAO
+from passlib.context import CryptContext
+from jose import jwt
+
+from pydantic import EmailStr
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+from app.users.dao import UsersDAO
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -20,7 +23,7 @@ def verify_password(plain_password, hashed_password) -> bool:
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     to_encode.update({'exp': expire})
     encode_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, settings.ALGORITHM
@@ -28,8 +31,9 @@ def create_access_token(data: dict) -> str:
     return encode_jwt
 
 
-async def authenticate_user(email: EmailStr, password: str):
-    user = await UsersDAO.find_one_or_none(email=email)
+async def authenticate_user(email: EmailStr, password: str,
+                            session: AsyncSession):
+    user = await UsersDAO.find_one_or_none(session, email=email)
     if not user and not verify_password(password, user.password):
         return None
     return user
