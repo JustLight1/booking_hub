@@ -21,7 +21,7 @@ async def get_bookings(
     session: AsyncSession = Depends(get_async_session),
     user: Users = Depends(get_current_user)
 ) -> list[SBookingInfo]:
-    return await BookingDAO.find_all_with_images(user_id=user.id, session=session)
+    return await BookingDAO.find_all_with_images(user.id, session)
 
 
 @router.post('')
@@ -30,7 +30,9 @@ async def add_booking(
     session: AsyncSession = Depends(get_async_session),
     user: Users = Depends(get_current_user)
 ):
-    booking = await BookingDAO.add(user.id, room_id, date_from, date_to, session)
+    booking = await BookingDAO.add(
+        user.id, room_id, date_from, date_to, session
+    )
     if not booking:
         raise RoomCannotBeBooked
 
