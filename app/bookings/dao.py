@@ -6,13 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dao.base import BaseDAO
 from app.bookings.models import Bookings
 from app.hotels.rooms.models import Rooms
+from app.exceptions import RoomCannotBeBooked
 
 
 class BookingDAO(BaseDAO):
     model = Bookings
 
     @classmethod
-    async def find_all_with_images(cls, user_id: int, session: AsyncSession):
+    async def find_all_by_user(cls, user_id: int, session: AsyncSession):
         query = (
             select(
                 # __table__.columns нужен для отсутствия вложенности в ответе Алхимии
@@ -100,6 +101,6 @@ class BookingDAO(BaseDAO):
 
             new_booking = await session.execute(add_booking)
             await session.commit()
-            return new_booking.mappings().one()
+            return new_booking.scalar()
         else:
-            return None
+            raise RoomCannotBeBooked
