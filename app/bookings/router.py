@@ -8,7 +8,8 @@ from app.users.dependencies import get_current_user
 from app.users.models import Users
 from app.bookings.dao import BookingDAO
 from app.bookings.schemas import SBooking, SBookingInfo
-from app.exceptions import RoomCannotBeBooked
+from app.exceptions import (RoomCannotBeBooked, CannotDeleteBooking,
+                            BookingDoesNotExistException)
 
 router = APIRouter(
     prefix='/bookings',
@@ -37,10 +38,21 @@ async def add_booking(
         raise RoomCannotBeBooked
 
 
-@router.delete("/{booking_id}")
+@router.delete(
+    '/',
+    response_model=SBooking
+)
 async def remove_booking(
     booking_id: int,
-    session: AsyncSession = Depends(get_async_session),
     current_user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session)
 ):
-    await BookingDAO.delete(id=booking_id, session=session, user_id=current_user.id)
+    bookings = await BookingDAO.find_one_or_none(session, id=booking_id)
+    if not bookings:
+        raise BookingDoesNotExistException
+    if bookings.user_id != current_user.id:
+        raise CannotDeleteBooking
+    await BookingDAO.delete(
+        session, id=booking_id, user_id=current_user.id
+    )
+    return bookings
