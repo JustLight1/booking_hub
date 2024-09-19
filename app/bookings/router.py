@@ -4,12 +4,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
-from app.users.dependencies import get_current_user
-from app.users.models import Users
 from app.bookings.dao import BookingDAO
-from app.bookings.schemas import SBooking, SBookingInfo
+from app.bookings.schemas import SBooking, SBookingInfo, SNewBooking
+from app.users.models import Users
+from app.users.dependencies import get_current_user
 from app.exceptions import (RoomCannotBeBooked, CannotDeleteBooking,
                             BookingDoesNotExistException)
+
 
 router = APIRouter(
     prefix='/bookings',
@@ -17,25 +18,32 @@ router = APIRouter(
 )
 
 
-@router.get("")
-async def get_bookings(
+@router.get(
+    '/',
+    response_model=list[SBookingInfo]
+)
+async def get_booking(
     session: AsyncSession = Depends(get_async_session),
     user: Users = Depends(get_current_user)
-) -> list[SBookingInfo]:
-    return await BookingDAO.find_all_with_images(user.id, session)
+):
+    return await BookingDAO.find_all_by_user(user.id, session)
 
 
-@router.post('')
-async def add_booking(
+@router.post(
+    '/',
+    response_model=SNewBooking
+)
+async def add_bookings(
     room_id: int, date_from: date, date_to: date,
-    session: AsyncSession = Depends(get_async_session),
-    user: Users = Depends(get_current_user)
+    user: Users = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session)
 ):
     booking = await BookingDAO.add(
         user.id, room_id, date_from, date_to, session
     )
     if not booking:
         raise RoomCannotBeBooked
+    return booking
 
 
 @router.delete(
