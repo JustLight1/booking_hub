@@ -16,11 +16,12 @@ class BookingDAO(BaseDAO):
     async def find_all_by_user(cls, user_id: int, session: AsyncSession):
         query = (
             select(
-                # __table__.columns нужен для отсутствия вложенности в ответе Алхимии
+                # __table__.columns нужен для отсутствия вложенности в ответе
+                # Алхимии
                 Bookings.__table__.columns,
                 Rooms.__table__.columns,
-                Bookings.total_days.label("total_days"),
-                Bookings.total_cost.label("total_cost")
+                Bookings.total_cost.label('total_cost'),
+                Bookings.total_days.label('total_days'),
             )
             .join(Rooms, Rooms.id == Bookings.room_id, isouter=True)
             .where(Bookings.user_id == user_id)
