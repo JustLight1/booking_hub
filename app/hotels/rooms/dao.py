@@ -1,18 +1,24 @@
 from datetime import date
 
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from bookings.models import Bookings
-from dao.base import BaseDAO
-from database import async_session_maker, engine
-from hotels.rooms.models import Rooms
+from app.bookings.models import Bookings
+from app.dao.base import BaseDAO
+from app.hotels.rooms.models import Rooms
 
 
 class RoomDAO(BaseDAO):
     model = Rooms
 
     @classmethod
-    async def find_all(cls, hotel_id: int, date_from: date, date_to: date):
+    async def find_all(
+        cls,
+        hotel_id: int,
+        date_from: date,
+        date_to: date,
+        session: AsyncSession
+    ):
         """
         WITH booked_rooms AS (
             SELECT room_id, COUNT(room_id) AS rooms_booked
@@ -28,9 +34,11 @@ class RoomDAO(BaseDAO):
         WHERE hotel_id = 1
         """
         booked_rooms = (
-            select(Bookings.room_id, func.count(Bookings.room_id).label("rooms_booked"))
-            .select_from(Bookings)
-            .where(
+            select(
+                Bookings.room_id, func.count(Bookings.room_id).label(
+                    'rooms_booked'
+                )
+            ).select_from(Bookings).where(
                 or_(
                     and_(
                         Bookings.date_from >= date_from,
@@ -41,23 +49,23 @@ class RoomDAO(BaseDAO):
                         Bookings.date_to > date_from,
                     ),
                 ),
-            )
-            .group_by(Bookings.room_id)
-            .cte("booked_rooms")
+            ).group_by(Bookings.room_id).cte('booked_rooms')
         )
-        
+
         get_rooms = (
             select(
                 Rooms.__table__.columns,
                 (Rooms.price * (date_to - date_from).days).label("total_cost"),
-                (Rooms.quantity - func.coalesce(booked_rooms.c.rooms_booked, 0)).label("rooms_left"),
+                (Rooms.quantity - func.coalesce(booked_rooms.c.rooms_booked, 0)
+                 ).label("rooms_left"),
             )
-            .join(booked_rooms, booked_rooms.c.room_id == Rooms.id, isouter=True)
+            .join(
+                booked_rooms, booked_rooms.c.room_id == Rooms.id, isouter=True
+            )
             .where(
                 Rooms.hotel_id == hotel_id
             )
         )
-        async with async_session_maker() as session:
-            # logger.debug(get_rooms.compile(engine, compile_kwargs={"literal_binds": True}))
-            rooms = await session.execute(get_rooms)
-            return rooms.mappings().all()
+
+        rooms = await session.execute(get_rooms)
+        return rooms.mappings().all()
