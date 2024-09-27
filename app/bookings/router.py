@@ -1,15 +1,17 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends
+from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.bookings.dao import BookingDAO
-from app.bookings.schemas import SBooking, SBookingInfo, SNewBooking
+from app.bookings.schemas import SBooking, SBookingInfo
 from app.users.models import Users
 from app.users.dependencies import get_current_user
 from app.exceptions import (RoomCannotBeBooked, CannotDeleteBooking,
                             BookingDoesNotExistException)
+from app.tasks.tasks import send_booking_confirmation_email
 
 
 router = APIRouter(
@@ -31,7 +33,7 @@ async def get_booking(
 
 @router.post(
     '/',
-    response_model=SNewBooking
+    response_model=SBooking
 )
 async def add_bookings(
     room_id: int, date_from: date, date_to: date,
@@ -43,7 +45,9 @@ async def add_bookings(
     )
     if not booking:
         raise RoomCannotBeBooked
-    return booking
+    booking_dict = TypeAdapter(SBooking).validate_python(booking).model_dump()
+    send_booking_confirmation_email.delay(booking_dict, user.email)
+    return booking_dict
 
 
 @router.delete(
