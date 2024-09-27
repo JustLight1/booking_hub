@@ -1,6 +1,8 @@
 from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Query, Depends
+from fastapi_cache.decorator import cache
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
@@ -17,6 +19,7 @@ router = APIRouter(prefix='/hotels', tags=['Отели'])
     '/{location}',
     response_model=list[SHotelInfo]
 )
+@cache(expire=60)
 async def get_hotels_by_location_and_time(
     location: str,
     date_from: date = Query(
