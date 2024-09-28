@@ -1,13 +1,7 @@
-from typing import TYPE_CHECKING
-
 from sqlalchemy import JSON, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-
-if TYPE_CHECKING:
-    from app.hotels.models import Hotels
-    from app.bookings.models import Bookings
 
 
 class Rooms(Base):
@@ -20,10 +14,8 @@ class Rooms(Base):
     services: Mapped[dict] = mapped_column(JSON, nullable=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     image_id: Mapped[int] = mapped_column(Integer)
+    hotel = relationship('Hotels', back_populates='rooms')
+    booking = relationship('Bookings', back_populates='room')
 
-    hotel: Mapped['Hotels'] = relationship('Hotels', back_populates='rooms')
-    booking: Mapped[list['Bookings']] = relationship(
-        'Bookings', back_populates='room')
-
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Номер {self.name}'
