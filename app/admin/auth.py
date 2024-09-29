@@ -9,13 +9,13 @@ from app.database import async_session_maker
 class AdminAuth(AuthenticationBackend):
     async def login(self, request: Request) -> bool:
         form = await request.form()
-        email, password = form["username"], form["password"]
+        email, password = form['username'], form['password']
 
         async with async_session_maker() as session:
             user = await authenticate_user(email, password, session)
         if user:
             access_token = create_access_token({'sub': str(user.id)})
-            request.session.update({"token": access_token})
+            request.session.update({'token': access_token})
         return True
 
     async def logout(self, request: Request) -> bool:
@@ -23,7 +23,7 @@ class AdminAuth(AuthenticationBackend):
         return True
 
     async def authenticate(self, request: Request) -> bool:
-        token = request.session.get("token")
+        token = request.session.get('token')
         if not token:
             return False
         async with async_session_maker() as session:
@@ -33,4 +33,4 @@ class AdminAuth(AuthenticationBackend):
         return True
 
 
-authentication_backend = AdminAuth(secret_key="...")
+authentication_backend = AdminAuth(secret_key='...')
