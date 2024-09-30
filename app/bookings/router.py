@@ -33,7 +33,8 @@ async def get_booking(
 
 @router.post(
     '',
-    response_model=SBooking
+    response_model=SBooking,
+    status_code=201
 )
 async def add_bookings(
     room_id: int, date_from: date, date_to: date,
@@ -45,9 +46,10 @@ async def add_bookings(
     )
     if not booking:
         raise RoomCannotBeBooked
-    booking_dict = TypeAdapter(SBooking).validate_python(booking).model_dump()
-    send_booking_confirmation_email.delay(booking_dict, user.email)
-    return booking_dict
+    # Celery
+    # booking_dict = TypeAdapter(SBooking).validate_python(booking).model_dump()
+    # send_booking_confirmation_email.delay(booking_dict, user.email)
+    return booking
 
 
 @router.delete(
