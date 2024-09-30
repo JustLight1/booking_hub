@@ -1,9 +1,17 @@
-from sqlalchemy import Integer
+from sqlalchemy import Integer, NullPool
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import (DeclarativeBase, declared_attr, Mapped,
                             mapped_column)
 
 from app.config import settings
+
+
+if settings.MODE == 'TEST':
+    DATABASE_URL = settings.TEST_DATABASE_URL
+    DATABASE_PARAMS = {'poolclass': NullPool}
+else:
+    DATABASE_URL = settings.DATABASE_URL
+    DATABASE_PARAMS = {}
 
 
 class Base(DeclarativeBase):
@@ -22,7 +30,7 @@ class Base(DeclarativeBase):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
 
-engine = create_async_engine(settings.DATABASE_URL)
+engine = create_async_engine(DATABASE_URL, **DATABASE_PARAMS)
 
 async_session_maker = async_sessionmaker(engine,  expire_on_commit=False)
 
