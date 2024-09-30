@@ -21,7 +21,7 @@ router = APIRouter(
 
 
 @router.get(
-    '/',
+    '',
     response_model=list[SBookingInfo]
 )
 async def get_booking(
@@ -32,7 +32,7 @@ async def get_booking(
 
 
 @router.post(
-    '/',
+    '',
     response_model=SBooking
 )
 async def add_bookings(
@@ -51,7 +51,7 @@ async def add_bookings(
 
 
 @router.delete(
-    '/',
+    '',
     response_model=SBooking
 )
 async def remove_booking(
