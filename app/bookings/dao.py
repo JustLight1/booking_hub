@@ -1,12 +1,14 @@
+# data access object
 from datetime import date
 
-from sqlalchemy import func, insert, select, and_, or_
+from sqlalchemy import select, insert, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dao.base import BaseDAO
 from app.bookings.models import Bookings
 from app.hotels.rooms.models import Rooms
 from app.exceptions import RoomCannotBeBooked
+# from app.database import engine
 
 
 class BookingDAO(BaseDAO):
@@ -16,12 +18,11 @@ class BookingDAO(BaseDAO):
     async def find_all_by_user(cls, user_id: int, session: AsyncSession):
         query = (
             select(
-                # __table__.columns нужен для отсутствия вложенности в ответе
-                # Алхимии
+                # __table__.columns нужен для отсутствия вложенности в ответе Алхимии
                 Bookings.__table__.columns,
                 Rooms.__table__.columns,
-                Bookings.total_cost.label('total_cost'),
                 Bookings.total_days.label('total_days'),
+                Bookings.total_cost.label('total_cost')
             )
             .join(Rooms, Rooms.id == Bookings.room_id, isouter=True)
             .where(Bookings.user_id == user_id)
@@ -67,17 +68,15 @@ class BookingDAO(BaseDAO):
         ).cte('booked_rooms')
 
         get_rooms_left = select(
-            Rooms.quantity - func.count(booked_rooms.c.room_id)
+            (
+                Rooms.quantity - func.count(booked_rooms.c.room_id)
+            ).label('rooms_left')
         ).select_from(Rooms).join(
-            booked_rooms, booked_rooms.c.room_id == Rooms.id,
-            isouter=True
-        ).where(Rooms.id == room_id).group_by(
-            Rooms.quantity, booked_rooms.c.room_id
-        )
+            booked_rooms, booked_rooms.c.room_id == Rooms.id, isouter=True,
+        ).where(Rooms.id == room_id).group_by(Rooms.quantity)
 
         # print(get_rooms_left.compile(
-        #     engine, compile_kwargs={'literal_bind': True}
-        #     ))
+        #     engine, compile_kwargs={'literal_binds': True}))
 
         rooms_left = await session.execute(get_rooms_left)
         rooms_left: int = rooms_left.scalar()
@@ -86,21 +85,14 @@ class BookingDAO(BaseDAO):
             get_price = select(Rooms.price).filter_by(id=room_id)
             price = await session.execute(get_price)
             price: int = price.scalar()
-            add_booking = insert(Bookings).values(
+            add_bookings = insert(Bookings).values(
                 room_id=room_id,
                 user_id=user_id,
                 date_from=date_from,
                 date_to=date_to,
-                price=price,
-            ).returning(
-                Bookings.id,
-                Bookings.user_id,
-                Bookings.room_id,
-                Bookings.date_from,
-                Bookings.date_to,
-            )
-
-            new_booking = await session.execute(add_booking)
+                price=price
+            ).returning(Bookings)
+            new_booking = await session.execute(add_bookings)
             await session.commit()
             return new_booking.scalar()
         else:
