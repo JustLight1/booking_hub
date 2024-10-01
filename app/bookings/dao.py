@@ -1,13 +1,14 @@
 # data access object
 from datetime import date
 
-from sqlalchemy import select, insert, and_, or_, func
+from sqlalchemy import and_, func, insert, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dao.base import BaseDAO
 from app.bookings.models import Bookings
-from app.hotels.rooms.models import Rooms
+from app.dao.base import BaseDAO
 from app.exceptions import RoomCannotBeBooked
+from app.hotels.rooms.models import Rooms
+
 # from app.database import engine
 
 

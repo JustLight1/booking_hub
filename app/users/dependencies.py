@@ -1,14 +1,13 @@
-from fastapi import Request, Depends
-
+from fastapi import Depends, Request
+from jose import ExpiredSignatureError, JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
-from jose import jwt, JWTError, ExpiredSignatureError
 
 from app.config import settings
 from app.database import get_async_session
-from app.users.dao import UsersDAO
 from app.exceptions import (IncorrectTokenFormatException,
-                            TokenExpiredException, UserIsNotPresentException,
-                            TokenAbsentException)
+                            TokenAbsentException, TokenExpiredException,
+                            UserIsNotPresentException)
+from app.users.dao import UsersDAO
 
 
 def get_token(request: Request):

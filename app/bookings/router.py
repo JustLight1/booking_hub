@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_async_session
 from app.bookings.dao import BookingDAO
 from app.bookings.schemas import SBooking, SBookingInfo
-from app.users.models import Users
-from app.users.dependencies import get_current_user
-from app.exceptions import (RoomCannotBeBooked, CannotDeleteBooking,
-                            BookingDoesNotExistException)
+from app.database import get_async_session
+from app.exceptions import (BookingDoesNotExistException, CannotDeleteBooking,
+                            RoomCannotBeBooked)
 from app.tasks.tasks import send_booking_confirmation_email
+from app.users.dependencies import get_current_user
+from app.users.models import Users
 
 
 router = APIRouter(

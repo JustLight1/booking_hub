@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
-from passlib.context import CryptContext
 from jose import jwt
-
+from passlib.context import CryptContext
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.users.dao import UsersDAO
 from app.exceptions import IncorrectEmailorPasswordException
+from app.users.dao import UsersDAO
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')

@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 
-from fastapi import Query, Depends
+from fastapi import Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session

@@ -1,8 +1,7 @@
 from datetime import date, datetime, timedelta
 
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi_cache.decorator import cache
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session

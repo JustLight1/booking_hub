@@ -1,12 +1,12 @@
 from datetime import date
 
-from sqlalchemy import select, and_, or_, func
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.bookings.models import Bookings
 from app.dao.base import BaseDAO
 from app.hotels.models import Hotels
 from app.hotels.rooms.models import Rooms
-from app.bookings.models import Bookings
 
 
 class HotelsDAO(BaseDAO):
