@@ -6,8 +6,8 @@ from app.tests.conftest import AsyncClient
 @pytest.mark.parametrize(
     'room_id, date_from, date_to, booked_rooms, status_code',
     [
-        (4, '2030-05-02' '2030-05-16', 4, 201),
         (4, '2030-05-01', '2030-05-15', 3, 201),
+        (4, '2030-05-02', '2030-05-16', 4, 201),
         (4, '2030-05-03', '2030-05-17', 5, 201),
         (4, '2030-05-04', '2030-05-18', 6, 201),
         (4, '2030-05-05', '2030-05-19', 7, 201),
@@ -36,3 +36,17 @@ async def test_add_and_get_booking_api(
 
     response = await authenticated_ac.get('/bookings')
     assert len(response.json()) == booked_rooms
+
+
+async def test_get_and_delete_booking(authenticated_ac: AsyncClient):
+    response = await authenticated_ac.get('/bookings')
+    existing_bookings = [booking['id'] for booking in response.json()]
+    for booking_id in existing_bookings:
+        response = await authenticated_ac.delete(
+            '/bookings', params={
+                'booking_id': booking_id
+            }
+        )
+
+    response = await authenticated_ac.get('/bookings')
+    assert len(response.json()) == 0
