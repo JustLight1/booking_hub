@@ -10,6 +10,7 @@ from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
 from sqladmin import Admin
 import sentry_sdk
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.admin.auth import authentication_backend
 from app.admin.views import BookingsAdmin, HotelsAdmin, RoomsAdmin, UsersAdmin
@@ -51,7 +52,6 @@ sentry_sdk.init(
     profiles_sample_rate=1.0,
 )
 
-
 app.include_router(router_users)
 app.include_router(router_bookings)
 app.include_router(router_hotels)
@@ -82,6 +82,13 @@ app = VersionedFastAPI(
     #                   secret_key='mysecretkey')
     #    ]
 )
+
+instrumentator = Instrumentator(
+    should_group_status_codes=False,
+    excluded_handlers=['.*admin.*', '/metrics']
+)
+
+instrumentator.instrument(app).expose(app)
 
 app.mount('/static', StaticFiles(directory='app/static'), 'static')
 
