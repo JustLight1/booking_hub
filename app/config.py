@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     MODE: Literal['DEV', 'TEST', 'PROD']
+    LOG_LEVEL: Literal['DEBUG', 'INFO']
 
     DB_HOST: str
     DB_PORT: int
@@ -50,6 +51,7 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str
     REDIS_PORT: int
+    SENTRY_DSN: str
 
     model_config = SettingsConfigDict(env_file='.env')
 
