@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi_versioning import VersionedFastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
@@ -22,6 +23,13 @@ from app.pages.router import router as router_pages
 from app.users.router import router as router_users
 
 
+if settings.MODE == 'TEST':
+    redis = aioredis.from_url(
+        f'redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}'
+    )
+    FastAPICache.init(RedisBackend(redis), prefix='cache')
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     redis = aioredis.from_url(
@@ -30,7 +38,12 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     FastAPICache.init(RedisBackend(redis), prefix='cache')
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title='Бронирование Отелей',
+    version='0.1.0',
+    root_path='/api'
+)
 
 sentry_sdk.init(
     dsn=settings.SENTRY_DSN,
@@ -38,15 +51,6 @@ sentry_sdk.init(
     profiles_sample_rate=1.0,
 )
 
-
-admin = Admin(app, engine, authentication_backend=authentication_backend)
-
-admin.add_view(UsersAdmin)
-admin.add_view(BookingsAdmin)
-admin.add_view(HotelsAdmin)
-admin.add_view(RoomsAdmin)
-
-app.mount('/static', StaticFiles(directory='app/static'), 'static')
 
 app.include_router(router_users)
 app.include_router(router_bookings)
@@ -67,3 +71,23 @@ app.add_middleware(
     allow_headers=['Content-Type', 'Set-Cookie', 'Access-Control-Allow-Origin',
                    'Access-Control-Allow-Headers', 'Authorization']
 )
+
+app = VersionedFastAPI(
+    app,
+    version_format='{major}',
+    prefix_format='/api/v{major}',
+    #    description='Greet users with a nice message',
+    #    middleware=[
+    #        Middleware(SessionMiddleware,
+    #                   secret_key='mysecretkey')
+    #    ]
+)
+
+app.mount('/static', StaticFiles(directory='app/static'), 'static')
+
+admin = Admin(app, engine, authentication_backend=authentication_backend)
+
+admin.add_view(UsersAdmin)
+admin.add_view(BookingsAdmin)
+admin.add_view(HotelsAdmin)
+admin.add_view(RoomsAdmin)
