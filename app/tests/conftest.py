@@ -70,7 +70,7 @@ async def ac():
 async def authenticated_ac():
     """Асинхронный аутентифицированный клиент для тестирования эндпоинтов"""
     async with AsyncClient(app=fastapi_app, base_url='http://test') as ac:
-        await ac.post('/auth/login', json={
+        await ac.post('/api/v1/auth/login', json={
             'email': 'test@test.com',
             'password': 'test',
         })
